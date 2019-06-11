@@ -133,8 +133,7 @@ public class Resources extends AbstractResources {
             case DEPLOYMENT:
                 resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.delete(resource);
-                    client().deleteDeployment((Deployment) resource);
+                    client().deleteDeployment(resource.getMetadata().getName());
                     waitForDeletion((Deployment) resource);
                 });
                 break;
@@ -670,7 +669,7 @@ public class Resources extends AbstractResources {
         clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars);
 
         return new DeploymentBuilder(clusterOperator)
-                .withApiVersion("apps/v1")
+                .withApiVersion("extensions/v1beta1")
                 .editSpec()
                     .withNewSelector()
                         .addToMatchLabels("name", Constants.STRIMZI_DEPLOYMENT_NAME)
