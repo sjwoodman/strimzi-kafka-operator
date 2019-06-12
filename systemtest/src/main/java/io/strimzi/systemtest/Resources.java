@@ -147,8 +147,7 @@ public class Resources extends AbstractResources {
             case SERVICE:
                 resources.push(() -> {
                     LOGGER.info("Deleting {} {}", resource.getKind(), resource.getMetadata().getName());
-                    x.inNamespace(resource.getMetadata().getNamespace()).delete(resource);
-                    client().deleteService((Service) resource);
+                    client().getClient().services().inNamespace(resource.getMetadata().getNamespace()).withName(resource.getMetadata().getName()).delete();
                 });
                 break;
             case INGRESS:
@@ -845,10 +844,11 @@ public class Resources extends AbstractResources {
         return createNewDeployment(kafkaClient);
     }
 
-    private static Service getSystemtestsServiceResource(String appName, int port) {
+    private static Service getSystemtestsServiceResource(String appName, int port, String namespace) {
         return new ServiceBuilder()
             .withNewMetadata()
                 .withName(appName)
+                .withNamespace(namespace)
                 .addToLabels("run", appName)
             .endMetadata()
             .withNewSpec()
@@ -863,7 +863,7 @@ public class Resources extends AbstractResources {
     }
 
     DoneableService createServiceResource(String appName, int port, String clientNamespace) {
-        Service service = getSystemtestsServiceResource(appName, port);
+        Service service = getSystemtestsServiceResource(appName, port, clientNamespace);
         LOGGER.info("Creating service {} in namespace {}", service.getMetadata().getName(), clientNamespace);
         client().createService(service);
         deleteLater(service);
