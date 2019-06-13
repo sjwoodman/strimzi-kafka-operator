@@ -5,9 +5,7 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.Service;
-import io.netty.handler.codec.http.HttpResponseStatus;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.vertx.codegen.annotations.Nullable;
 import io.vertx.core.Vertx;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -187,7 +185,7 @@ public class HttpBridgeST extends MessagingBaseST {
 
     JsonArray receiveHttpRequests(String bridgeHost, int bridgePort, String groupID, String name) throws Exception {
         CompletableFuture<JsonArray> future = new CompletableFuture<>();
-        client.get(bridgePort, bridgeHost,"/consumers/" + groupID + "/instances/" + name + "/records?timeout=" + 1000)
+        client.get(bridgePort, bridgeHost, "/consumers/" + groupID + "/instances/" + name + "/records?timeout=" + 1000)
                 .putHeader("Accept", Constants.KAFKA_BRIDGE_JSON_JSON)
                 .as(BodyCodec.jsonArray())
                 .send(ar -> {
@@ -217,7 +215,7 @@ public class HttpBridgeST extends MessagingBaseST {
 
     boolean subscribHttpConsumer(JsonObject topics, String bridgeHost, int bridgePort, String groupId, String name) throws InterruptedException, ExecutionException, TimeoutException {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
-        client.post(bridgePort , bridgeHost, "/consumers/" + groupId + "/instances/" + name + "/subscription")
+        client.post(bridgePort, bridgeHost,  "/consumers/" + groupId + "/instances/" + name + "/subscription")
                 .putHeader("Content-length", String.valueOf(topics.toBuffer().length()))
                 .putHeader("Content-type", Constants.KAFKA_BRIDGE_JSON)
                 .as(BodyCodec.jsonObject())
