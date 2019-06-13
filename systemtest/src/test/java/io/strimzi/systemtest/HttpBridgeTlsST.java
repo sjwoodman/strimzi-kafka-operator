@@ -39,7 +39,7 @@ public class HttpBridgeTlsST extends HttpBridgeBaseST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeTlsST.class);
     public static final String NAMESPACE = "bridge-tls-cluster-test";
 
-    private String USER_NAME = "pepa";
+    private String userName = "pepa";
     private String bridgeHost = "";
 
     @Test
@@ -60,7 +60,7 @@ public class HttpBridgeTlsST extends HttpBridgeBaseST {
             LOGGER.debug("offset size: {}, partition: {}, offset size: {}", offsets.size(), metadata.getInteger("partition"), metadata.getLong("offset"));
         }
 
-        receiveMessagesConsoleTls(NAMESPACE, topicName, messageCount, USER_NAME);
+        receiveMessagesConsoleTls(NAMESPACE, topicName, messageCount, userName);
     }
 
     @Test
@@ -88,7 +88,7 @@ public class HttpBridgeTlsST extends HttpBridgeBaseST {
         // Subscribe
         assertTrue(subscribeHttpConsumer(topics, bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name));
         // Send messages to Kafka
-        sendMessagesConsoleTls(NAMESPACE, topicName, messageCount, USER_NAME);
+        sendMessagesConsoleTls(NAMESPACE, topicName, messageCount, userName);
         // Try to consume messages
         JsonArray bridgeResponse = receiveHttpRequests(bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name);
         if (bridgeResponse.size() == 0) {
@@ -130,8 +130,8 @@ public class HttpBridgeTlsST extends HttpBridgeBaseST {
                 .endSpec().done();
 
         // Create Kafka user
-        KafkaUser userSource = testClassResources.tlsUser(CLUSTER_NAME, USER_NAME).done();
-        waitTillSecretExists(USER_NAME);
+        KafkaUser userSource = testClassResources.tlsUser(CLUSTER_NAME, userName).done();
+        waitTillSecretExists(userName);
 
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecret = new CertSecretSource();
