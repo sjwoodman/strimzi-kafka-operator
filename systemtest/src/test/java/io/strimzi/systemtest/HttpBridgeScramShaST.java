@@ -62,7 +62,7 @@ public class HttpBridgeScramShaST extends HttpBridgeBaseST {
             LOGGER.debug("offset size: {}, partition: {}, offset size: {}", offsets.size(), metadata.getInteger("partition"), metadata.getLong("offset"));
         }
 
-        receiveMessagesConsoleTls(NAMESPACE, topicName, messageCount, userName);
+        receiveMessagesConsoleScramSha(NAMESPACE, topicName, messageCount, userName);
     }
 
     @Test
@@ -90,7 +90,7 @@ public class HttpBridgeScramShaST extends HttpBridgeBaseST {
         // Subscribe
         assertTrue(subscribeHttpConsumer(topics, bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name));
         // Send messages to Kafka
-        sendMessagesConsoleTls(NAMESPACE, topicName, messageCount, userName);
+        sendMessagesConsoleScramSha(NAMESPACE, topicName, messageCount, userName);
         // Try to consume messages
         JsonArray bridgeResponse = receiveHttpRequests(bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name);
         if (bridgeResponse.size() == 0) {

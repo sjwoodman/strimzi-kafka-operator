@@ -66,6 +66,12 @@ class KafkaClientProperties {
         producerProperties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         producerProperties.setProperty(ProducerConfig.MAX_BLOCK_MS_CONFIG, "1000");
         producerProperties.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, securityProtocol);
+        if (securityProtocol.equals("SASL_SSL")) {
+            producerProperties.setProperty("sasl.mechanism", "SCRAM-SHA-512");
+            producerProperties.setProperty("sasl.jaas.config", "org.apache.kafka.common.security.scram.ScramLoginModule required \\");
+            producerProperties.setProperty("username", userName);
+            producerProperties.setProperty("password", "password");
+        }
         producerProperties.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, userName + "-producer");
         producerProperties.setProperty(ProducerConfig.ACKS_CONFIG, "all");
 
@@ -101,6 +107,12 @@ class KafkaClientProperties {
         consumerProperties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumerProperties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumerProperties.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, securityProtocol);
+        if (securityProtocol.equals("SASL_SSL")) {
+            consumerProperties.setProperty("sasl.mechanism", "SCRAM-SHA-512");
+            consumerProperties.setProperty("sasl.jaas.config", "org.apache.kafka.common.security.scram.ScramLoginModule required \\");
+            consumerProperties.setProperty("username", userName);
+            consumerProperties.setProperty("password", "password");
+        }
         consumerProperties.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, userName + "-consumer");
         consumerProperties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 

@@ -403,7 +403,7 @@ public class StUtils {
         LOGGER.info("Waiting when Service {} in namespace {} is ready", serviceName, kubeClient().getNamespace());
 
         TestUtils.waitFor("service " + serviceName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-                () -> kubeClient().getClient().services().inNamespace(kubeClient().getNamespace()).withName(serviceName).get().getSpec().getExternalIPs().size() > 0);
+            () -> kubeClient().getClient().services().inNamespace(kubeClient().getNamespace()).withName(serviceName).get().getSpec().getExternalIPs().size() > 0);
     }
 
     private static String changeOrgAndTag(String image, String registry, String newOrg, String newTag) {
