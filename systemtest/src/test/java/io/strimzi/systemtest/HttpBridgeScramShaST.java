@@ -8,6 +8,8 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.PasswordSecretSource;
+import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.KafkaListenerTls;
 import io.strimzi.systemtest.utils.StUtils;
@@ -35,15 +37,15 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag(BRIDGE)
 @Tag(REGRESSION)
 @ExtendWith(VertxExtension.class)
-public class HttpBridgeTlsST extends HttpBridgeBaseST {
-    private static final Logger LOGGER = LogManager.getLogger(HttpBridgeTlsST.class);
-    public static final String NAMESPACE = "bridge-tls-cluster-test";
+public class HttpBridgeScramShaST extends HttpBridgeBaseST {
+    private static final Logger LOGGER = LogManager.getLogger(HttpBridgeScramShaST.class);
+    public static final String NAMESPACE = "bridge-scram-sha-cluster-test";
 
     private String userName = "pepa";
     private String bridgeHost = "";
 
     @Test
-    void testSendSimpleMessageTls() throws Exception {
+    void testSendSimpleMessageTlsScramSha() throws Exception {
         int messageCount = 50;
         String topicName = "topic-simple-send";
         // Create topic
@@ -64,7 +66,7 @@ public class HttpBridgeTlsST extends HttpBridgeBaseST {
     }
 
     @Test
-    void testReceiveSimpleMessageTls() throws Exception {
+    void testReceiveSimpleMessageTlsScramSha() throws Exception {
         int messageCount = 50;
         String topicName = "topic-simple-receive";
         // Create topic
@@ -118,20 +120,23 @@ public class HttpBridgeTlsST extends HttpBridgeBaseST {
         testClassResources.kafkaEphemeral(CLUSTER_NAME, 1, 1)
                 .editSpec()
                 .editKafka()
-                .editListeners()
+                .withNewListeners()
                 .withNewKafkaListenerExternalLoadBalancer()
                 .withTls(true)
                 .endKafkaListenerExternalLoadBalancer()
-                .withTls(listenerTls)
-                .withNewTls()
-                .endTls()
+                .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()
                 .endListeners()
                 .endKafka()
                 .endSpec().done();
 
         // Create Kafka user
-        KafkaUser userSource = testClassResources.tlsUser(CLUSTER_NAME, userName).done();
+        KafkaUser userSource = testClassResources.scramShaUser(CLUSTER_NAME, userName).done();
         waitTillSecretExists(userName);
+
+        // Initialize PasswordSecret to set this as PasswordSecret in Mirror Maker spec
+        PasswordSecretSource passwordSecret = new PasswordSecretSource();
+        passwordSecret.setSecretName(userName);
+        passwordSecret.setPassword("password");
 
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecret = new CertSecretSource();
@@ -141,17 +146,20 @@ public class HttpBridgeTlsST extends HttpBridgeBaseST {
         // Deploy http bridge
         testClassResources.kafkaBridge(CLUSTER_NAME, KafkaResources.tlsBootstrapAddress(CLUSTER_NAME), 1, Constants.HTTP_BRIDGE_DEFAULT_PORT)
             .editSpec()
-            .withNewTls()
-            .withTrustedCertificates(certSecret)
-            .endTls()
+            .withNewKafkaBridgeAuthenticationScramSha512()
+                .withNewUsername(userName)
+                .withPasswordSecret(passwordSecret)
+            .endKafkaBridgeAuthenticationScramSha512()
+                .withNewTls()
+                .withTrustedCertificates(certSecret)
+                .endTls()
             .endSpec().done();
-        // Create load balancer service for expose bridge outside openshift
 
         Map<String, String> map = new HashMap<>();
         map.put("strimzi.io/cluster", CLUSTER_NAME);
         map.put("strimzi.io/kind", "KafkaBridge");
         map.put("strimzi.io/name", CLUSTER_NAME + "-bridge");
-
+        // Create load balancer service for expose bridge outside openshift
         Service service = getSystemtestsServiceResource(bridgeLoadBalancer, Constants.HTTP_BRIDGE_DEFAULT_PORT)
                 .editSpec()
                 .withType("LoadBalancer")

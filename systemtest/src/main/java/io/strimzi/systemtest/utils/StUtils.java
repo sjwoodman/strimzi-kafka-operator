@@ -399,6 +399,13 @@ public class StUtils {
         );
     }
 
+    public static void waitForLoadBalancerService(String serviceName) {
+        LOGGER.info("Waiting when Service {} in namespace {} is ready", serviceName, kubeClient().getNamespace());
+
+        TestUtils.waitFor("service " + serviceName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
+                () -> kubeClient().getClient().services().inNamespace(kubeClient().getNamespace()).withName(serviceName).get().getSpec().getExternalIPs().size() > 0);
+    }
+
     private static String changeOrgAndTag(String image, String registry, String newOrg, String newTag) {
         image = image.replaceFirst("^strimzi/", registry + "/" + newOrg + "/");
         Matcher m = KAFKA_COMPONENT_PATTERN.matcher(image);
@@ -431,6 +438,15 @@ public class StUtils {
         return changeOrgAndTag(image, Environment.TEST_CLIENT_REGISTRY, Environment.TEST_CLIENT_ORG, Environment.TEST_CLIENT_TAG);
     }
 
+    /**
+     * The method to configure docker image to use proper docker registry, docker org and docker tag for kafka bridge image.
+     * @param image Kafka Bridge image that needs to be changed
+     * @return Updated test-client image with a proper registry, org, tag
+     */
+    public static String changeBrdigeOrgAndTag(String image) {
+        return changeOrgAndTag(image, Environment.BRDIGE_REGISTRY, Environment.BRDIGE_ORG, Environment.BRDIGE_TAG);
+    }
+
     public static String changeOrgAndTagInImageMap(String imageMap) {
         Matcher m = VERSION_IMAGE_PATTERN.matcher(imageMap);
         StringBuffer sb = new StringBuffer();
@@ -439,12 +455,5 @@ public class StUtils {
         }
         m.appendTail(sb);
         return sb.toString();
-    }
-
-    public static void waitForLoadBalancerService(String serviceName) {
-        LOGGER.info("Waiting when Service {} in namespace {} is ready", serviceName, kubeClient().getNamespace());
-
-        TestUtils.waitFor("service " + serviceName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_READINESS,
-            () -> kubeClient().getClient().services().inNamespace(kubeClient().getNamespace()).withName(serviceName).get().getSpec().getExternalIPs().size() > 0);
     }
 }

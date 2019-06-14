@@ -39,6 +39,18 @@ public class Environment {
      */
     private static final String TEST_CLIENT_TAG_ENV = "TEST_CLIENT_TAG";
     /**
+     * Specify organization which owns kafka bridge used in system tests.
+     */
+    private static final String BRDIGE_ORG_ENV = "BRDIGE_ORG";
+    /**
+     * Specify registry for kafka bridge used in system tests.
+     */
+    private static final String BRDIGE_REGISTRY_ENV = "BRDIGE_REGISTRY";
+    /**
+     * Specify kafka bridge tags used in system tests.
+     */
+    private static final String BRDIGE_TAG_ENV = "BRDIGE_TAG";
+    /**
      * Directory for store logs collected during the tests.
      */
     private static final String TEST_LOG_DIR_ENV = "TEST_LOG_DIR";
@@ -77,6 +89,9 @@ public class Environment {
     public static final String TEST_CLIENT_ORG = System.getenv().getOrDefault(TEST_CLIENT_ORG_ENV, STRIMZI_ORG);
     public static final String TEST_CLIENT_TAG = System.getenv().getOrDefault(TEST_CLIENT_TAG_ENV, STRIMZI_TAG);
     public static final String TEST_CLIENT_REGISTRY = System.getenv().getOrDefault(TEST_CLIENT_REGISTRY_ENV, STRIMZI_REGISTRY);
+    public static final String BRDIGE_ORG = System.getenv().getOrDefault(BRDIGE_ORG_ENV, STRIMZI_ORG);
+    public static final String BRDIGE_TAG = System.getenv().getOrDefault(BRDIGE_TAG_ENV, STRIMZI_TAG);
+    public static final String BRDIGE_REGISTRY = System.getenv().getOrDefault(BRDIGE_REGISTRY_ENV, STRIMZI_REGISTRY);
     static final String TEST_LOG_DIR = System.getenv().getOrDefault(TEST_LOG_DIR_ENV, TEST_LOG_DIR_DEFAULT);
     static final String ST_KAFKA_VERSION = System.getenv().getOrDefault(ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION_DEFAULT);
     static final String STRIMZI_LOG_LEVEL = System.getenv().getOrDefault(STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL_DEFAULT);
@@ -96,6 +111,9 @@ public class Environment {
         LOGGER.info(debugFormat, TEST_CLIENT_ORG_ENV, TEST_CLIENT_ORG);
         LOGGER.info(debugFormat, TEST_CLIENT_TAG_ENV, TEST_CLIENT_TAG);
         LOGGER.info(debugFormat, TEST_CLIENT_REGISTRY_ENV, TEST_CLIENT_REGISTRY);
+        LOGGER.info(debugFormat, BRDIGE_ORG_ENV, BRDIGE_ORG);
+        LOGGER.info(debugFormat, BRDIGE_TAG_ENV, BRDIGE_TAG);
+        LOGGER.info(debugFormat, BRDIGE_REGISTRY_ENV, BRDIGE_REGISTRY);
         LOGGER.info(debugFormat, TEST_LOG_DIR_ENV, TEST_LOG_DIR);
         LOGGER.info(debugFormat, ST_KAFKA_VERSION_ENV, ST_KAFKA_VERSION);
         LOGGER.info(debugFormat, STRIMZI_LOG_LEVEL_ENV, STRIMZI_LOG_LEVEL);
