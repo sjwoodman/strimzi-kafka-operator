@@ -49,7 +49,7 @@ public class HttpBridgeScramShaST extends HttpBridgeBaseST {
     @Test
     void testSendSimpleMessageTlsScramSha() throws Exception {
         int messageCount = 50;
-        String topicName = "topic-simple-send";
+        String topicName = "topic-simple-send-" + new Random().nextInt(Integer.MAX_VALUE);
         // Create topic
         testClassResources.topic(CLUSTER_NAME, topicName).done();
 
@@ -70,12 +70,12 @@ public class HttpBridgeScramShaST extends HttpBridgeBaseST {
     @Test
     void testReceiveSimpleMessageTlsScramSha() throws Exception {
         int messageCount = 50;
-        String topicName = "topic-simple-receive";
+        String topicName = "topic-simple-receive-" + new Random().nextInt(Integer.MAX_VALUE);
         // Create topic
         testClassResources.topic(CLUSTER_NAME, topicName).done();
 
         String name = "kafka-consumer-simple-receive";
-        String groupId = "my-group" + new Random().nextInt(Integer.MAX_VALUE);
+        String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
 
         JsonObject config = new JsonObject();
         config.put("name", name);
@@ -99,6 +99,7 @@ public class HttpBridgeScramShaST extends HttpBridgeBaseST {
             // Real consuming
             bridgeResponse = receiveHttpRequests(bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name);
         }
+
         assertThat("Sent messages are not equals", bridgeResponse.size(), is(messageCount));
         // Delete consumer
         assertTrue(deleteConsumer(bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name));
@@ -106,7 +107,7 @@ public class HttpBridgeScramShaST extends HttpBridgeBaseST {
 
     @BeforeAll
     void createClassResources() {
-        LOGGER.info("Creating resources before the test class");
+        LOGGER.info("Deploy Kafka and Kafka Bridge before tests");
         prepareEnvForOperator(NAMESPACE);
 
         createTestClassResources();
