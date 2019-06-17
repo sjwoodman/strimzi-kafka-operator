@@ -13,7 +13,9 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.config.SaslConfigs;
 import org.apache.kafka.common.config.SslConfigs;
+import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.apache.logging.log4j.LogManager;
@@ -65,17 +67,10 @@ class KafkaClientProperties {
         producerProperties.setProperty(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         producerProperties.setProperty(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         producerProperties.setProperty(ProducerConfig.MAX_BLOCK_MS_CONFIG, "1000");
-        producerProperties.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, securityProtocol);
-        if (securityProtocol.equals("SASL_SSL")) {
-            producerProperties.setProperty("sasl.mechanism", "SCRAM-SHA-512");
-            producerProperties.setProperty("sasl.jaas.config", "org.apache.kafka.common.security.scram.ScramLoginModule required \\");
-            producerProperties.setProperty("username", userName);
-            producerProperties.setProperty("password", "password");
-        }
         producerProperties.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, userName + "-producer");
         producerProperties.setProperty(ProducerConfig.ACKS_CONFIG, "all");
 
-        producerProperties.putAll(sharedClientProperties(namespace, clusterName, userName));
+        producerProperties.putAll(sharedClientProperties(namespace, clusterName, userName, securityProtocol));
 
         return producerProperties;
     }
@@ -106,17 +101,10 @@ class KafkaClientProperties {
                 getExternalBootstrapConnect(namespace, clusterName));
         consumerProperties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         consumerProperties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        consumerProperties.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, securityProtocol);
-        if (securityProtocol.equals("SASL_SSL")) {
-            consumerProperties.setProperty("sasl.mechanism", "SCRAM-SHA-512");
-            consumerProperties.setProperty("sasl.jaas.config", "org.apache.kafka.common.security.scram.ScramLoginModule required \\");
-            consumerProperties.setProperty("username", userName);
-            consumerProperties.setProperty("password", "password");
-        }
         consumerProperties.setProperty(CommonClientConfigs.CLIENT_ID_CONFIG, userName + "-consumer");
         consumerProperties.setProperty(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
 
-        consumerProperties.putAll(sharedClientProperties(namespace, clusterName, userName));
+        consumerProperties.putAll(sharedClientProperties(namespace, clusterName, userName, securityProtocol));
 
         return consumerProperties;
     }
@@ -126,12 +114,14 @@ class KafkaClientProperties {
      * @param namespace kafka namespace
      * @param clusterName kafka cluster name
      * @param userName user name for authorization
+     * @param securityProtocol security protocol
      * @return shared client properties
      */
-    private static Properties sharedClientProperties(String namespace, String clusterName, String userName) {
+    private static Properties sharedClientProperties(String namespace, String clusterName, String userName, String securityProtocol) {
         Properties properties = new Properties();
         // For turn off hostname verification
-        properties.setProperty("ssl.endpoint.identification.algorithm", "");
+        properties.setProperty(SslConfigs.SSL_ENDPOINT_IDENTIFICATION_ALGORITHM_CONFIG, "");
+        properties.setProperty(CommonClientConfigs.SECURITY_PROTOCOL_CONFIG, securityProtocol);
 
         try {
             String tsPassword = "foo";
@@ -158,7 +148,16 @@ class KafkaClientProperties {
             throw new RuntimeException(e);
         }
 
-        if (!userName.isEmpty()) {
+        if (!userName.isEmpty() && securityProtocol.equals(SecurityProtocol.SASL_SSL.name)) {
+            properties.setProperty(SaslConfigs.SASL_MECHANISM, "SCRAM-SHA-512");
+            Secret userSecret = kubeClient(namespace).getSecret(userName);
+            String password = new String(Base64.getDecoder().decode(userSecret.getData().get("password")));
+
+            String jaasTemplate = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"%s\" password=\"%s\";";
+            String jaasCfg = String.format(jaasTemplate, userName, password);
+
+            properties.setProperty(SaslConfigs.SASL_JAAS_CONFIG, jaasCfg);
+        } else if (!userName.isEmpty()) {
             try {
 
                 Secret userSecret = kubeClient(namespace).getSecret(userName);

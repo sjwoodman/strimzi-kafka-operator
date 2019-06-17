@@ -14,6 +14,7 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -76,7 +77,7 @@ public class HttpBridgeTlsST extends HttpBridgeBaseST {
         JsonObject config = new JsonObject();
         config.put("name", name);
         config.put("format", "json");
-        config.put("auto.offset.reset", "earliest");
+        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         // Create consumer
         JsonObject response = createBridgeConsumer(config, bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId);
         assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(name));

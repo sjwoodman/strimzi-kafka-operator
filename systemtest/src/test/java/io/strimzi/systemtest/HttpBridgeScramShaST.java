@@ -16,6 +16,7 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.junit5.VertxExtension;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -72,13 +74,13 @@ public class HttpBridgeScramShaST extends HttpBridgeBaseST {
         // Create topic
         testClassResources.topic(CLUSTER_NAME, topicName).done();
 
-        String name = "my-kafka-consumer";
-        String groupId = "my-group";
+        String name = "kafka-consumer-simple-receive";
+        String groupId = "my-group" + new Random().nextInt(Integer.MAX_VALUE);
 
         JsonObject config = new JsonObject();
         config.put("name", name);
         config.put("format", "json");
-        config.put("auto.offset.reset", "earliest");
+        config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         // Create consumer
         JsonObject response = createBridgeConsumer(config, bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId);
         assertThat("Consumer wasn't created correctly", response.getString("instance_id"), is(name));
@@ -97,7 +99,7 @@ public class HttpBridgeScramShaST extends HttpBridgeBaseST {
             // Real consuming
             bridgeResponse = receiveHttpRequests(bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name);
         }
-        assertThat("Sent messages are equals", bridgeResponse.size(), is(messageCount));
+        assertThat("Sent messages are not equals", bridgeResponse.size(), is(messageCount));
         // Delete consumer
         assertTrue(deleteConsumer(bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name));
     }
@@ -123,6 +125,7 @@ public class HttpBridgeScramShaST extends HttpBridgeBaseST {
                 .withNewListeners()
                 .withNewKafkaListenerExternalLoadBalancer()
                 .withTls(true)
+                .withAuth(new KafkaListenerAuthenticationScramSha512())
                 .endKafkaListenerExternalLoadBalancer()
                 .withNewTls().withAuth(new KafkaListenerAuthenticationScramSha512()).endTls()
                 .endListeners()
