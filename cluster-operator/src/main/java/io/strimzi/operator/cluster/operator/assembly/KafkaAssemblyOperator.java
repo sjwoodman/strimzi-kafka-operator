@@ -2631,7 +2631,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         String getInternalServiceHostname(String serviceName)    {
             return serviceName + "." + namespace + ".svc";
         }
-
     }
 
     private Date dateSupplier() {

@@ -109,7 +109,8 @@ public class KafkaStatusTest {
     }
 
     @Test
-    public void testStatusEntityOperatorReadiness() throws ParseException {
+    public void testFailingEntityOperator() throws ParseException {
+
         Kafka kafka = getKafkaCrd();
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -117,17 +118,18 @@ public class KafkaStatusTest {
         CrdOperator mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(getKafkaCrd()));
+        when(mockKafkaOps.updateStatusAsync(eq(kafka))).thenReturn(Future.succeededFuture(getKafkaCrd()));
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        MockWorkingKafkaAssemblyOperator kao = new MockWorkingKafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
-                certManager,
-                supplier,
-                config);
+        MockFailingEntityOperator kao = new MockFailingEntityOperator(vertx, new PlatformFeaturesAvailability(false, kubernetesVersion),
+               certManager,
+               supplier,
+               config);
 
         kao.createOrUpdate(new Reconciliation("test-trigger", ResourceType.KAFKA, namespace, clusterName), kafka).setHandler(res -> {
-            assertTrue(res.succeeded());
+            assertFalse(res.succeeded());
 
             assertNotNull(kafkaCaptor.getValue());
             assertNotNull(kafkaCaptor.getValue().getStatus());
@@ -328,6 +330,43 @@ public class KafkaStatusTest {
 
             assertEquals(2L, status.getObservedGeneration());
         });
+    }
+
+    class MockFailingEntityOperator extends KafkaAssemblyOperator {
+        Reconciliation reconciliation;
+        Kafka kafkaAssembly;
+
+        public MockFailingEntityOperator(Vertx vertx, PlatformFeaturesAvailability pfa, CertManager certManager, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
+            super(vertx, pfa, certManager, supplier, config);
+        }
+
+        ReconciliationState createReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
+            this.reconciliation = reconciliation;
+            this.kafkaAssembly = kafkaAssembly;
+            return new ReconciliationState(reconciliation, kafkaAssembly);
+        }
+
+        Future<Void> reconcile(ReconciliationState reconcileState)   {
+            Future<Void> chainFuture = Future.future();
+
+            MockReconciliationState mockReconciliationState = new MockReconciliationState(this.reconciliation, this.kafkaAssembly);
+
+            mockReconciliationState.mockEntityOperatorDeployment()
+                .compose(state -> state.entityOperatorReady())
+                .compose(state -> chainFuture.complete(), chainFuture);
+
+            return chainFuture;
+        }
+
+        class MockReconciliationState extends KafkaAssemblyOperator.ReconciliationState {
+            MockReconciliationState(Reconciliation reconciliation, Kafka kafkaAssembly) {
+                super(reconciliation, kafkaAssembly);
+            }
+
+            Future<ReconciliationState> mockEntityOperatorDeployment() {
+                return Future.failedFuture("failed");
+            }
+        }
     }
 
     // This allows to test the status handling when reconciliation succeeds
