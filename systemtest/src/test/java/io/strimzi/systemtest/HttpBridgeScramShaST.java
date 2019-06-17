@@ -73,6 +73,8 @@ public class HttpBridgeScramShaST extends HttpBridgeBaseST {
         String topicName = "topic-simple-receive-" + new Random().nextInt(Integer.MAX_VALUE);
         // Create topic
         testClassResources.topic(CLUSTER_NAME, topicName).done();
+        // Send messages to Kafka
+        sendMessagesConsoleScramSha(NAMESPACE, topicName, messageCount, userName);
 
         String name = "kafka-consumer-simple-receive";
         String groupId = "my-group-" + new Random().nextInt(Integer.MAX_VALUE);
@@ -91,8 +93,6 @@ public class HttpBridgeScramShaST extends HttpBridgeBaseST {
         topics.put("topics", topic);
         // Subscribe
         assertTrue(subscribeHttpConsumer(topics, bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name));
-        // Send messages to Kafka
-        sendMessagesConsoleScramSha(NAMESPACE, topicName, messageCount, userName);
         // Try to consume messages
         JsonArray bridgeResponse = receiveHttpRequests(bridgeHost, Constants.HTTP_BRIDGE_DEFAULT_PORT, groupId, name);
         if (bridgeResponse.size() == 0) {
